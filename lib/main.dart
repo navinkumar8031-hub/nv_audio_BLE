@@ -231,7 +231,7 @@ class DspBleService extends ChangeNotifier {
 
       for (var r in results) {
         final devName = r.device.platformName.isNotEmpty ? r.device.platformName : r.advertisementData.advName;
-        if (devName == "Naveen_Audio_System" && !isConnected) {
+        if (devName == "Naveen_DSP_BLE" && !isConnected) {
           stopScan();
           connectToDevice(r.device);
           break;
@@ -253,7 +253,7 @@ class DspBleService extends ChangeNotifier {
   Future<void> connectToDevice(BluetoothDevice device) async {
     try {
       stopScan();
-      await device.connect(autoConnect: true, timeout: const Duration(seconds: 8));
+      await device.connect(autoConnect: false, timeout: const Duration(seconds: 8));
 
       connectedDevice = device;
       final devName = device.platformName.isNotEmpty ? device.platformName : "Naveen_Audio_System";
