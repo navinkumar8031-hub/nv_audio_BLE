@@ -22,13 +22,13 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.2'
+          flutter-version: '3.24.0'
           channel: 'stable'
           cache: true
 
       - name: Create Android Project Structure
         run: |
-          flutter create --platforms=android --org com.nvstudio --project-name nv_audio_dsp .
+          flutter create --no-pub --platforms=android --org com.nvstudio --project-name nv_audio_dsp .
 
       - name: Configure Android Permissions & SDK
         run: |
@@ -48,7 +48,6 @@ jobs:
 
       - name: Patch Plugins SDK Resolution
         run: |
-          # Overwrite any plugin trying to dynamically resolve compileSdkVersion or referencing invalid flutter properties
           find "$HOME/.pub-cache" -name "build.gradle" -type f -exec sed -i -E 's/.*compileSdkVersion.*/    compileSdkVersion 34/g' {} + || true
           find "$HOME/.pub-cache" -name "build.gradle" -type f -exec sed -i -E 's/.*minSdkVersion.*/    minSdkVersion 21/g' {} + || true
 
