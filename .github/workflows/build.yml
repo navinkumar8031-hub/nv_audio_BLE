@@ -29,12 +29,23 @@ jobs:
       - name: Create Android Project Structure
         run: |
           flutter create --no-pub --platforms=android --org com.nvstudio --project-name nv_audio_dsp .
+          rm -rf test
 
-      - name: Configure Android Permissions & SDK
+      - name: Configure Android Permissions, Kotlin & SDK
         run: |
+          # 1. Update Kotlin to 1.9.24 in settings.gradle & build.gradle (Fixes shared_preferences_android compileReleaseKotlin)
+          if [ -f android/settings.gradle ]; then
+            sed -i -E 's/id ["'"'"']org\.jetbrains\.kotlin\.android["'"'"'] version ["'"'"'][^"'"'"']*["'"'"']/id "org.jetbrains.kotlin.android" version "1.9.24"/g' android/settings.gradle
+          fi
+          if [ -f android/build.gradle ]; then
+            sed -i -E 's/ext\.kotlin_version = .*/ext.kotlin_version = "1.9.24"/g' android/build.gradle
+          fi
+
+          # 2. Inject Bluetooth & Location Permissions into AndroidManifest.xml
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           sed -i 's/<manifest [^>]*>/&\n    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"\/>\n    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"\/>\n    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"\/>\n    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"\/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"\/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"\/>/' $MANIFEST
 
+          # 3. Configure Android app build.gradle SDK versions
           APP_GRADLE="android/app/build.gradle"
           sed -i 's/compileSdkVersion .*/compileSdkVersion 34/g' $APP_GRADLE || true
           sed -i 's/compileSdk = .*/compileSdk = 34/g' $APP_GRADLE || true
@@ -48,8 +59,11 @@ jobs:
 
       - name: Patch Plugins SDK Resolution
         run: |
+          # Fix compileSdk / compileSdkVersion for all cached plugins
           find "$HOME/.pub-cache" -name "build.gradle" -type f -exec sed -i -E 's/.*compileSdkVersion.*/    compileSdkVersion 34/g' {} + || true
+          find "$HOME/.pub-cache" -name "build.gradle" -type f -exec sed -i -E 's/.*compileSdk = .*/    compileSdk = 34/g' {} + || true
           find "$HOME/.pub-cache" -name "build.gradle" -type f -exec sed -i -E 's/.*minSdkVersion.*/    minSdkVersion 21/g' {} + || true
+          find "$HOME/.pub-cache" -name "build.gradle" -type f -exec sed -i -E 's/.*minSdk = .*/    minSdk = 21/g' {} + || true
 
       - name: Build Release APK
         run: flutter build apk --release
